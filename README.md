@@ -12,6 +12,6 @@ go run main.go migrate
 ### Run the project
 
 ```
-go run main.go
+go run .
 ```
 
