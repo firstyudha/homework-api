@@ -9,6 +9,9 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/rysmaadit/go-template/model"
+	"github.com/rysmaadit/go-template/repository"
+
 	"github.com/rysmaadit/go-template/app"
 	"github.com/rysmaadit/go-template/router"
 	"github.com/rysmaadit/go-template/service"
@@ -36,9 +39,22 @@ func (c *Cli) Run(application *app.Application) {
 
 	log.SetReportCaller(true)
 
+	// butuh ini untuk migrasi
+	db, err := repository.Connect(application.Config.DBDSN)
+	if err != nil {
+		panic(err)
+	}
+
+	//migration
+	if len(c.Args) >= 2 && c.Args[1] == "migrate" {
+		db.Migrator().AutoMigrate(&model.Movie{})
+		fmt.Println("Migration run successfully")
+		os.Exit(0)
+	}
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%v", application.Config.AppPort),
-		Handler: router.NewRouter(service.InstantiateDependencies(application)),
+		Handler: router.NewRouter(service.InstantiateDependencies(application), db),
 	}
 
 	log.Println(fmt.Sprintf("starting application { %v } on port :%v", application.Config.AppName, application.Config.AppPort))
